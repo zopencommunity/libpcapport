@@ -1,0 +1,37 @@
+#
+export ZOPEN_DEV_URL="https://github.com/the-tcpdump-group/libpcap.git"
+export ZOPEN_BUILD_LINE="DEV"
+export ZOPEN_RUNTIME_DEPS="bash"
+export ZOPEN_CATEGORIES="networking"
+export ZOPEN_DEV_DEPS="git zoslib make automake autoconf m4 pkgconfig flex bison curl libpsl"
+export ZOPEN_COMP=clang
+export ZOPEN_BOOTSTRAP="./autogen.sh"
+export ZOPEN_EXTRA_CONFIGURE_OPTS="--with-pcap=null"
+export ZOPEN_EXTRA_CFLAGS="${ZOPEN_EXTRA_CFLAGS} -fvisibility=default -D_ALL_SOURCE -D_XOPEN_SOURCE_EXTENDED -D_OPEN_SYS_IF_EXT -mzos-target=zosv2r5"
+export ZOPEN_EXTRA_CPPFLAGS="${ZOPEN_EXTRA_CPPFLAGS} -fvisibility=default -D_ALL_SOURCE -D_XOPEN_SOURCE_EXTENDED -D_OPEN_SYS_IF_EXT -mzos-target=zosv2r5"
+zopen_check_results()
+{
+  dir="$1"
+  pfx="$2"
+  chk="$1/$2_check.log"
+
+  actualFailures=$(grep "tests failed" ${chk} | cut -d ' ' -f 1)
+  actualPassed=$(grep "tests passed" ${chk} | cut -d ' ' -f 1)
+  actualSkipped=$(grep "tests skipped" ${chk} | cut -d ' ' -f 1)
+
+  TotalTests=$((actualFailures + actualPassed + actualSkipped))
+
+  # Echo the following information to gauge build health
+  echo "actualFailures:${actualFailures}"
+  echo "totalTests:${TotalTests}"
+  echo "totalSkipped:${actualSkipped}"
+  echo "expectedFailures:${actualFailures}"
+  echo "expectedTotalTests:${TotalTests}"
+}
+
+zopen_get_version()
+{
+  # Modify to echo the version of your tool/library
+  # Rather than hardcoding the version, obtain the version by running the tool/library
+  echo "1.0.0"
+}
