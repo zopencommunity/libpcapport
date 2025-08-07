@@ -1,0 +1,13 @@
+diff --git a/pcap/bpf.h b/pcap/bpf.h
+index 2868b936..2d791ee4 100644
+--- a/pcap/bpf.h
++++ b/pcap/bpf.h
+@@ -81,7 +81,7 @@
+ 
+ #include <pcap/funcattrs.h>
+ #include <pcap/dlt.h>
+-
++#include <sys/types.h>
+ #ifdef __cplusplus
+ extern "C" {
+ #endif

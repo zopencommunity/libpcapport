@@ -1,0 +1,128 @@
+diff --git a/pcap.c b/pcap.c
+index ebb0c9e9..111bc729 100644
+--- a/pcap.c
++++ b/pcap.c
+@@ -127,6 +127,10 @@
+ #include "pcap-rpcap.h"
+ #endif
+ 
++#ifdef __MVS__
++#include <zos-tls.h>
++#endif
++
+ #ifdef _WIN32
+ /*
+  * To quote the WSAStartup() documentation:
+@@ -3366,14 +3370,27 @@ pcap_datalink_val_to_description(int dlt)
+ const char *
+ pcap_datalink_val_to_description_or_dlt(int dlt)
+ {
++#ifdef __MVS__
++		static tls_t tls_unkbuf;
++		ssize_t size_unkbuf = sizeof(char) * 40;
++		char *unkbuf = NULL;
++
++		tls_unkbuf.sz = size_unkbuf;
++		unkbuf = __tlsValue(&tls_unkbuf);
++#else
+         static thread_local char unkbuf[40];
++#endif
+         const char *description;
+ 
+         description = pcap_datalink_val_to_description(dlt);
+         if (description != NULL) {
+                 return description;
+         } else {
++#ifdef __MVS__
++				(void)snprintf(unkbuf, size_unkbuf, "DLT %d", dlt);
++#else
+                 (void)snprintf(unkbuf, sizeof(unkbuf), "DLT %d", dlt);
++#endif
+                 return unkbuf;
+         }
+ }
+@@ -3632,7 +3649,15 @@ pcapint_setnonblock_fd(pcap_t *p, int nonblock)
+ const char *
+ pcap_statustostr(int errnum)
+ {
++#ifdef __MVS__
++	static tls_t tls_ebuf;
++	ssize_t size_ebuf = sizeof(char) * (15+10+1);
++	char *ebuf = NULL;
++	tls_ebuf.sz = size_ebuf;
++	ebuf = __tlsValue(&tls_ebuf);
++#else
+ 	static thread_local char ebuf[15+10+1];
++#endif
+ 
+ 	switch (errnum) {
+ 
+@@ -3684,7 +3709,11 @@ pcap_statustostr(int errnum)
+ 	case PCAP_ERROR_CAPTURE_NOTSUP:
+ 		return ("Packet capture is not supported on that device");
+ 	}
++#ifdef __MVS__
++	(void)snprintf(ebuf, size_ebuf, "Unknown error: %d", errnum);
++#else
+ 	(void)snprintf(ebuf, sizeof ebuf, "Unknown error: %d", errnum);
++#endif
+ 	return(ebuf);
+ }
+ 
+@@ -3742,8 +3771,17 @@ pcap_strerror(int errnum)
+ 	 * - OpenBSD
+ 	 * - Solaris 10 & 11
+ 	 */
++	#ifdef __MVS__
++	static tls_t tls_errbuf;
++	ssize_t size_errbuf = sizeof(char) * PCAP_ERRBUF_SIZE;
++	char *errbuf = NULL;
++	tls_errbuf.sz = size_errbuf;
++	errbuf = __tlsValue(&tls_errbuf);
++	int err = strerror_r(errnum, errbuf, size_errbuf);
++	#else
+ 	static thread_local char errbuf[PCAP_ERRBUF_SIZE];
+ 	int err = strerror_r(errnum, errbuf, PCAP_ERRBUF_SIZE);
++	#endif
+ 	switch (err) {
+ 	case 0:
+ 		/* That worked. */
+@@ -3754,21 +3792,37 @@ pcap_strerror(int errnum)
+ 		 * UNIX 03 says this isn't guaranteed to produce a
+ 		 * fallback error message.
+ 		 */
++#ifdef __MVS__
++		snprintf(errbuf, size_errbuf,
++			"Unknown error: %d", errnum);
++#else
+ 		snprintf(errbuf, PCAP_ERRBUF_SIZE,
+-		         "Unknown error: %d", errnum);
++			"Unknown error: %d", errnum);
++#endif
+ 		break;
+ 	case ERANGE:
+ 		/*
+ 		 * UNIX 03 says this isn't guaranteed to produce a
+ 		 * fallback error message.
+ 		 */
++#ifdef __MVS__
++		snprintf(errbuf, size_errbuf,
++		         "Message for error %d is too long", errnum);
++#else
+ 		snprintf(errbuf, PCAP_ERRBUF_SIZE,
+ 		         "Message for error %d is too long", errnum);
++#endif
+ 		break;
+ 	default:
++#ifdef __MVS__
++		snprintf(errbuf, size_errbuf,
++				"strerror_r(%d, ...) unexpectedly returned %d",
++				errnum, err);
++#else
+ 		snprintf(errbuf, PCAP_ERRBUF_SIZE,
+ 		         "strerror_r(%d, ...) unexpectedly returned %d",
+ 		         errnum, err);
++#endif
+ 	}
+ 	return errbuf;
+ #else

@@ -1,0 +1,15 @@
+diff --git a/pcap-null.c b/pcap-null.c
+index f0e35ec8..baefb238 100644
+--- a/pcap-null.c
++++ b/pcap-null.c
+@@ -25,6 +25,10 @@
+ 
+ #include "pcap-int.h"
+ 
++#ifdef __MVS__
++#include <sys/types.h>
++#endif
++
+ static char nosup[] = "live packet capture not supported on this system";
+ 
+ pcap_t *

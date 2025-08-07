@@ -1,0 +1,37 @@
+diff --git a/testprogs/filtertest.c b/testprogs/filtertest.c
+index 652e2217..9566c355 100644
+--- a/testprogs/filtertest.c
++++ b/testprogs/filtertest.c
+@@ -40,7 +40,9 @@ The Regents of the University of California.  All rights reserved.\n";
+   #include "unix.h"
+ #else
+   #include <unistd.h>
++  #ifndef __MVS__
+   #include <sysexits.h>
++  #endif
+ #endif
+ #include <fcntl.h>
+ #include <errno.h>
+@@ -82,6 +84,22 @@ PCAP_API void pcap_set_print_dot_graph(int);
+ #include <pcap-int.h>
+ #endif // __linux__
+ 
++#ifdef __MVS__
++#define EX_OK           0   /* successful termination */
++#define EX_USAGE        64  /* command line usage error */
++#define EX_DATAERR      65  /* data format error */
++#define EX_NOINPUT      66  /* cannot open input */
++#define EX_NOUSER       67  /* addressee unknown */
++#define EX_NOHOST       68  /* host name unknown */
++#define EX_UNAVAILABLE  69  /* service unavailable */
++#define EX_SOFTWARE     70  /* internal software error */
++#define EX_OSERR        71  /* system error (e.g., can't fork) */
++#define EX_IOERR        74  /* input/output error */
++#define EX_TEMPFAIL     75  /* temp failure; user is invited to retry */
++#define EX_PROTOCOL     76  /* remote error in protocol */
++#define EX_NOPERM       77  /* permission denied */
++#endif
++
+ static char *program_name;
+ 
+ /* Forwards */

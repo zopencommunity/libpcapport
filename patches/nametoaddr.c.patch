@@ -1,0 +1,65 @@
+diff --git a/nametoaddr.c b/nametoaddr.c
+index 7b33290b..b7b27366 100644
+--- a/nametoaddr.c
++++ b/nametoaddr.c
+@@ -129,6 +129,10 @@
+ #define NTOHL(x) (x) = ntohl(x)
+ #endif
+ 
++#ifdef __MVS__
++#include <zos-tls.h>
++#endif
++
+ /*
+  *  Convert host name to internet address.
+  *  Return 0 upon failure.
+@@ -851,20 +855,40 @@ pcap_ether_hostton(const char *name)
+ {
+ 	register struct pcap_etherent *ep;
+ 	register u_char *ap;
++#ifdef __MVS__
++	static tls_t tls_fp, tls_init;
++	ssize_t size_fp = sizeof(FILE *), size_init = sizeof(int);
++	FILE **fp = NULL;
++	int *init;
++	tls_fp.sz = size_fp;
++	tls_init.sz = size_init;
++
++	fp = (FILE **)__tlsValue(&tls_fp);
++	init = (int *)__tlsValue(&tls_init);
++	
++	#define fptr (*fp)
++	#define init_var (*init)
++
++	fptr = NULL;
++	init_var = 0;
++#else
+ 	static thread_local FILE *fp = NULL;
+ 	static thread_local int init = 0;
++	#define fptr fp
++	#define init_var init
++#endif
+ 
+-	if (!init) {
+-		fp = fopen(PCAP_ETHERS_FILE, "r");
+-		++init;
+-		if (fp == NULL)
++	if (!init_var) {
++		fptr = fopen(PCAP_ETHERS_FILE, "r");
++		++init_var;
++		if (fptr == NULL)
+ 			return (NULL);
+-	} else if (fp == NULL)
+-		return (NULL);
+-	else
+-		rewind(fp);
++		} else if (fptr == NULL)
++			return (NULL);
++		else
++			rewind(fptr);
+ 
+-	while ((ep = pcap_next_etherent(fp)) != NULL) {
++	while ((ep = pcap_next_etherent(fptr)) != NULL) {
+ 		if (strcmp(ep->name, name) == 0) {
+ 			ap = (u_char *)malloc(6);
+ 			if (ap != NULL) {
